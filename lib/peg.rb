@@ -14,6 +14,6 @@ class Peg
   end
 
   def to_s
-    "#{@color.capitalize} peg in position #{@position}"
+    "<#{@color.capitalize} peg in position #{@position}>"
   end
 end

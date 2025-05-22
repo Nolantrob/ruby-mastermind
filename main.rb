@@ -18,13 +18,13 @@ end
 
 def choose_color
   colors = %w[red orange yellow green blue purple]
-  print "\nYour choice: "
-  answer = gets.to_i
-  if answer <= 0 || answer > 6 || !answer.is_a?(Integer)
+  loop do
+    print "\nYour choice: "
+    answer = gets.to_i
+    return colors[answer - 1] unless answer <= 0 || answer > 6 || !answer.is_a?(Integer)
+
     puts 'Invalid Choice: Please try again.'
-    choose_color
   end
-  colors[answer - 1]
 end
 
 def print_options
@@ -48,5 +48,5 @@ def make_guess
   guess
 end
 
-puts make_guess
-puts generate_code
+p make_guess
+p generate_code
