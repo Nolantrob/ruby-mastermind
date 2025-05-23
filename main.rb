@@ -1,19 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'lib/peg'
-
-puts 'Welcome to Mastermind! Can you guess the secret code?'
-
-def generate_code
+def print_options
   colors = %w[red orange yellow green blue purple]
-  code = []
-  position = 1
-
-  4.times do
-    code.push(Peg.new(colors.sample, position))
-    position += 1
+  colors.each_with_index do |color, index|
+    puts "#{index + 1} - #{color.capitalize}"
   end
-  code
 end
 
 def choose_color
@@ -27,26 +18,46 @@ def choose_color
   end
 end
 
-def print_options
-  colors = %w[red orange yellow green blue purple]
-  colors.each_with_index do |color, index|
-    puts "#{index + 1} - #{color.capitalize}"
-  end
-end
-
 def make_guess
   guess = []
   position = 1
 
   4.times do
-    puts "\nWhat color do you think is in position #{position}?\n\n"
+    print "What color do you think is in position #{position}?\n\n"
     print_options
     choice = choose_color
-    guess.push(Peg.new(choice, position))
+    guess.push(choice)
     position += 1
   end
   guess
 end
 
-p make_guess
-p generate_code
+def generate_code
+  colors = %w[red orange yellow green blue purple]
+  code = []
+  position = 1
+
+  4.times do
+    code.push(colors.sample)
+    position += 1
+  end
+  code
+end
+
+secret_code = generate_code
+guess =       make_guess
+p secret_code
+p guess
+black_pegs = 0
+white_pegs = 0
+
+guess.each_with_index do |peg, index|
+  next unless secret_code.include?(peg)
+
+  if peg == secret_code[index]
+    puts '+1 Black Peg'
+  else
+    puts '+1 White Peg'
+  end
+  secret_code[index] = nil
+end
