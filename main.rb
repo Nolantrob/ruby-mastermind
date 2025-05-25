@@ -44,20 +44,29 @@ def generate_code
   code
 end
 
-secret_code = generate_code
-guess =       make_guess
-p secret_code
-p guess
-black_pegs = 0
-white_pegs = 0
+require 'pry-byebug'
 
-guess.each_with_index do |peg, index|
-  next unless secret_code.include?(peg)
+# guess = %w[orange orange orange orange]
+# code = %w[orange yellow yellow yellow]
+code = generate_code
+guess = make_guess
 
-  if peg == secret_code[index]
-    puts '+1 Black Peg'
-  else
-    puts '+1 White Peg'
+def compare_guess_with_code(guess, code)
+  puts "Code: #{code}\n\n"
+
+  guess.each_with_index do |guessed_peg, index|
+    # binding.pry
+    next unless code.include?(guessed_peg)
+
+    code.each_with_index do |code_peg, idx|
+      # binding.pry
+      next unless guessed_peg == code_peg
+
+      puts guess[index] == code[index] ? '+1 Black Peg' : '+1 White Peg'
+      code[idx] = nil
+    end
   end
-  secret_code[index] = nil
+  "Code: #{code}\nGuess: #{guess}\n\n"
 end
+
+puts compare_guess_with_code(guess, code)
