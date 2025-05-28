@@ -4,10 +4,12 @@
 class Game
   attr_accessor :code_maker, :code_breaker
 
-  COLORS = %w[red orange yellow green blue purple brown black].freeze
+  COLORS = %w[red orange yellow green blue purple].freeze
   def initialize
     puts 'Welcome to Mastermind!'
     do_role_select
+    @black_pegs = 0
+    @white_pegs = 0
   end
 
   def do_role_select # rubocop:disable Metrics/MethodLength
@@ -32,6 +34,7 @@ class Game
   end
 
   def print_options
+    puts ''
     COLORS.each_with_index do |color, index|
       puts "#{index + 1} - #{color.capitalize}"
     end
@@ -44,9 +47,9 @@ class Game
     when 'manual_select'
       loop do
         answer = gets.to_i
-        return COLORS[answer - 1] unless answer <= 0 || answer > 6 || !answer.is_a?(Integer)
+        return COLORS[answer - 1] unless answer <= 0 || answer > COLORS.size || !answer.is_a?(Integer)
 
-        puts 'Invalid Choice: Please try again.'
+        print 'Invalid Choice: Please try again: '
       end
     end
   end
@@ -86,26 +89,26 @@ class Game
   end
 
   def compare_guess_with_code(guess, code)
-    puts "Code: #{code}\n\n"
-
     guess.each_with_index do |guessed_peg, index|
-      # binding.pry
       next unless code.include?(guessed_peg)
 
       code.each_with_index do |code_peg, idx|
-        # binding.pry
         next unless guessed_peg == code_peg
 
-        puts guess[index] == code[index] ? '+1 Black Peg' : '+1 White Peg'
-        code[idx] = nil
+        guess[index] == code[index] ? @black_pegs += 1 : @white_pegs += 1
+        code[idx] = '<found>'
+        break
       end
     end
-    "Code: #{code}\nGuess: #{guess}\n\n"
+    # puts "Code: #{simplify_code_string(@secret_code)}\nGuess: #{simplify_code_string(guess)}\n\n"
+    puts "Black Pegs: #{@black_pegs}\nWhite Pegs: #{@white_pegs}"
   end
 
   def play_game
-    puts "\n#{@code_maker.name}, prepare your secret code...\n\n"
+    puts "\n#{@code_maker.name}, prepare your secret code...\n"
     @secret_code = create_code(@code_maker.play_method)
-    puts 'Secret Code has been created.'
+    puts "\nThe Secret Code has been created!\n\n"
+    @current_guess = create_code(@code_breaker.play_method)
+    compare_guess_with_code(@current_guess, @secret_code)
   end
 end
