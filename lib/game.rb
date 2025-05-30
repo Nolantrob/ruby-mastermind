@@ -4,17 +4,23 @@
 class Game
   attr_accessor :code_maker, :code_breaker
 
-  COLORS = %w[red yellow green blue cyan magenta].freeze
+  COLORS = %w[red green blue magenta].freeze
   def initialize
-    puts 'Welcome to Mastermind!'.colorize(:yellow)
+    system 'clear'
+    puts 'Welcome to MASTERMIND!'.colorize(:yellow)
     do_role_select
     @black_pegs = 0
     @white_pegs = 0
+    @guesses = []
   end
 
   def do_role_select # rubocop:disable Metrics/MethodLength
-    puts "Will you be the #{'Code-Maker'.colorize(:green)} or the #{'Code-Breaker'.colorize(:red)}?\n
-1 - #{'Code-Maker'.colorize(:green)}\n2 - #{'Code-Breaker'.colorize(:red)}\n\n"
+    roles = [{ name: 'Code-Maker'.colorize(:green),
+               description: "You will create a secret sequence of 4 colors out of #{COLORS.size} options" },
+             { name: 'Code-Breaker'.colorize(:red),
+               description: "You are given 12 guesses to try and figure out the Code-Maker's secret code." }]
+    puts "Will you be the #{roles[0][:name]} or the #{roles[1][:name]}?"
+    puts "1 - #{roles[0][:name]}: #{roles[0][:description]}\n2 - #{roles[1][:name]}: #{roles[1][:description]}\n\n"
     print 'Your choice: '
     loop do
       answer = gets.to_i
@@ -33,8 +39,12 @@ class Game
     end
   end
 
+  def underline(string)
+    "\e[4m#{string}\e[0m"
+  end
+
   def print_options
-    puts ''
+    puts "\n#{underline('Options')}:\n"
     COLORS.each_with_index do |color, index|
       puts "#{index + 1} - #{color.capitalize.colorize(color.to_sym)}"
     end
@@ -70,7 +80,7 @@ class Game
       code.push(chosen_color)
       puts "#{COLORS.find_index(chosen_color) + 1} - #{chosen_color.capitalize.colorize(chosen_color.to_sym)}"
     end
-    puts "\nYour selection: #{simplify_code_string(code)}\n\n"
+    @guesses.push(code)
     code
   end
 
@@ -88,45 +98,77 @@ class Game
     code
   end
 
-  def compare_guess_with_code(guess, code)
-    puts "Code before assessment: #{simplify_code_string(@secret_code)}"
-    @black_pegs = 0
-    @white_pegs = 0
+  def hide_found_element_from_code(guess, code)
+    manipulated_code = code.map { |el| el }
     guess.each_with_index do |guessed_peg, index|
-      next unless code.include?(guessed_peg)
+      next unless manipulated_code.include?(guessed_peg)
 
-      code.each_with_index do |code_peg, idx|
+      manipulated_code.each_with_index do |code_peg, idx|
         next unless guessed_peg == code_peg
 
-        guess[index] == code[index] ? @black_pegs += 1 : @white_pegs += 1
-        code[idx] = '<found>'
+        guess[index] == manipulated_code[index] ? @black_pegs += 1 : @white_pegs += 1
+        manipulated_code[idx] = '<found>'
         break
       end
     end
-    puts "Code: #{simplify_code_string(code)}\nGuess: #{simplify_code_string(guess)}\n\n"
-    puts "Black Pegs: #{@black_pegs}".colorize(:gray)
-    puts "White Pegs: #{@white_pegs}\n\n"
   end
 
-  def win_game(code_breaker)
-    puts "The code has been broken after #{@turn_number} guesses!"
+  def compare_guess_with_code(guess, code)
+    @black_pegs = 0
+    @white_pegs = 0
+    hide_found_element_from_code(guess, code)
+    # puts "Code: #{simplify_code_string(code)}\nGuess: #{simplify_code_string(guess)}\n\n"
+    # puts "\nYour selection: #{simplify_code_string(code)} - #{@black_pegs.to_s.colorize(:gray)}/#{@white_pegs}\n\n"
+  end
+
+  def win_game(turn_number)
+    puts "The code has been broken after #{turn_number - 1} guesses!\n#{@code_breaker.name} has cracked the code!"
+  end
+
+  def lose_game
+    puts "#{@code_breaker.name} has failed to crack the code!\nBetter luck next time!"
+  end
+
+  def run_intro_text
+    puts "\nThe #{@code_maker.name} will now prepare a secret code...\n"
+    @secret_code = create_code(@code_maker.play_method)
+    puts "\nThe Secret Code has been created!\n\n"
+  end
+
+  def display_guesses_in_order
+    puts ''
+    @guesses.each_with_index do |guess, index|
+      puts "Guess ##{index + 1}: #{simplify_code_string(guess)} - #{peg_count}"
+    end
+    puts ''
+  end
+
+  def peg_count
+    "#{@black_pegs.to_s.colorize(:gray)}/#{@white_pegs}"
+  end
+
+  def display_current_guess
+    puts "\nYour selection: #{simplify_code_string(@current_guess)} - #{@black_pegs.to_s.colorize(:gray)}/#{@white_pegs}\n\n"
+  end
+
+  def code_breaker_make_guess(turn_number)
+    puts "----------Guess #{turn_number}/12----------"
+    @current_guess = create_code(@code_breaker.play_method)
+    compare_guess_with_code(@current_guess, @secret_code)
+    display_guesses_in_order
   end
 
   def play_game
-    puts "\nThe #{@code_maker.name.colorize(:green)} will now prepare a secret code...\n"
-    @secret_code = create_code(@code_maker.play_method)
-    puts "\nThe Secret Code has been created!\n\n"
-    @turn_number = 1
-    while @turn_number <= 12
+    run_intro_text
+    turn_number = 1
+    while turn_number <= 12
       if @black_pegs == 4
-        win_game(@code_breaker)
+        win_game(turn_number)
         break
       end
-      puts "----------Guess #{@turn_number}/12----------"
-      @current_guess = create_code(@code_breaker.play_method)
-      # binding.pry
-      compare_guess_with_code(@current_guess, @secret_code)
-      @turn_number += 1
+      code_breaker_make_guess(turn_number)
+      turn_number += 1
     end
+    lose_game if @black_pegs < 4
   end
 end
