@@ -80,7 +80,6 @@ class Game
       code.push(chosen_color)
       puts "#{COLORS.find_index(chosen_color) + 1} - #{chosen_color.capitalize.colorize(chosen_color.to_sym)}"
     end
-    @guesses.push(code)
     code
   end
 
@@ -95,6 +94,7 @@ class Game
     when 'manual_select'
       code = prompt_user_to_make_code
     end
+    @guesses.push(code)
     code
   end
 
@@ -117,12 +117,10 @@ class Game
     @black_pegs = 0
     @white_pegs = 0
     hide_found_element_from_code(guess, code)
-    # puts "Code: #{simplify_code_string(code)}\nGuess: #{simplify_code_string(guess)}\n\n"
-    # puts "\nYour selection: #{simplify_code_string(code)} - #{@black_pegs.to_s.colorize(:gray)}/#{@white_pegs}\n\n"
   end
 
   def win_game(turn_number)
-    puts "The code has been broken after #{turn_number - 1} guesses!\n#{@code_breaker.name} has cracked the code!"
+    puts "Success! The #{@code_breaker.name} has cracked the code after #{turn_number - 1} guesses!"
   end
 
   def lose_game
@@ -147,13 +145,10 @@ class Game
     "#{@black_pegs.to_s.colorize(:gray)}/#{@white_pegs}"
   end
 
-  def display_current_guess
-    puts "\nYour selection: #{simplify_code_string(@current_guess)} - #{@black_pegs.to_s.colorize(:gray)}/#{@white_pegs}\n\n"
-  end
-
   def code_breaker_make_guess(turn_number)
-    puts "----------Guess #{turn_number}/12----------"
+    puts "----------Round #{turn_number}/12----------"
     @current_guess = create_code(@code_breaker.play_method)
+    # binding.pry
     compare_guess_with_code(@current_guess, @secret_code)
     display_guesses_in_order
   end
