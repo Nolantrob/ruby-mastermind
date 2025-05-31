@@ -84,7 +84,11 @@ class Game
   end
 
   def simplify_code_string(code)
-    code.map { |color| color.capitalize.colorize(color.to_sym) }.join(', ')
+    code.map { |color| color.capitalize.colorize(color.to_sym) }.join(' ')
+  end
+
+  def add_to_list_of_guesses(guess, black_pegs, white_pegs)
+    @guesses.push({ sequence: guess, black_peg_count: black_pegs, white_peg_count: white_pegs })
   end
 
   def create_code(method)
@@ -94,37 +98,51 @@ class Game
     when 'manual_select'
       code = prompt_user_to_make_code
     end
-    @guesses.push(code)
     code
   end
 
-  def hide_found_element_from_code(guess, code)
+  def count_pegs(guess, code)
     manipulated_code = code.map { |el| el }
+    manipulated_guess = guess.map { |el| el }
+    count_black_pegs(manipulated_guess, manipulated_code)
+    count_white_pegs(manipulated_guess, manipulated_code)
+  end
+
+  def count_black_pegs(guess, code)
     guess.each_with_index do |guessed_peg, index|
-      next unless manipulated_code.include?(guessed_peg)
+      next unless code.include?(guessed_peg)
 
-      manipulated_code.each_with_index do |code_peg, idx|
-        next unless guessed_peg == code_peg
+      next unless guess[index] == code[index]
 
-        guess[index] == manipulated_code[index] ? @black_pegs += 1 : @white_pegs += 1
-        manipulated_code[idx] = '<found>'
-        break
-      end
+      guess[index] = '<CHECKED>'
+      code[index] = '<FOUND>'
+      @black_pegs += 1
+    end
+  end
+
+  def count_white_pegs(guess, code)
+    guess.each do |guessed_peg|
+      next unless code.include?(guessed_peg)
+
+      found_index = code.find_index(guessed_peg)
+      code[found_index] = '<found>'
+      @white_pegs += 1
     end
   end
 
   def compare_guess_with_code(guess, code)
     @black_pegs = 0
     @white_pegs = 0
-    hide_found_element_from_code(guess, code)
+    count_pegs(guess, code)
   end
 
   def win_game(turn_number)
-    puts "Success! The #{@code_breaker.name} has cracked the code after #{turn_number - 1} guesses!"
+    puts "Success! The #{@code_breaker.name} has cracked the code after #{turn_number} guesses!"
   end
 
   def lose_game
-    puts "#{@code_breaker.name} has failed to crack the code!\nBetter luck next time!"
+    puts "#{@code_breaker.name} has failed to crack the code! "\
+    "It was: #{simplify_code_string(@secret_code)}\nBetter luck next time!"
   end
 
   def run_intro_text
@@ -134,34 +152,35 @@ class Game
   end
 
   def display_guesses_in_order
-    puts ''
+    # puts simplify_code_string(@secret_code)
     @guesses.each_with_index do |guess, index|
-      puts "Guess ##{index + 1}: #{simplify_code_string(guess)} - #{peg_count}"
+      puts "Guess ##{index + 1}: #{simplify_code_string(guess[:sequence])}"\
+      "- #{guess[:black_peg_count].to_s.colorize(:gray)}/#{guess[:white_peg_count]}"
     end
     puts ''
   end
 
-  def peg_count
-    "#{@black_pegs.to_s.colorize(:gray)}/#{@white_pegs}"
-  end
-
-  def code_breaker_make_guess(turn_number)
+  def run_round(turn_number)
     puts "----------Round #{turn_number}/12----------"
     @current_guess = create_code(@code_breaker.play_method)
-    # binding.pry
     compare_guess_with_code(@current_guess, @secret_code)
+    add_to_list_of_guesses(@current_guess, @black_pegs, @white_pegs)
+
+    system 'clear'
+
     display_guesses_in_order
   end
 
   def play_game
     run_intro_text
     turn_number = 1
+    # loop do
     while turn_number <= 12
+      run_round(turn_number)
       if @black_pegs == 4
         win_game(turn_number)
         break
       end
-      code_breaker_make_guess(turn_number)
       turn_number += 1
     end
     lose_game if @black_pegs < 4
