@@ -152,7 +152,6 @@ class Game
   end
 
   def display_guesses_in_order
-    # puts simplify_code_string(@secret_code)
     @guesses.each_with_index do |guess, index|
       puts "Guess ##{index + 1}: #{simplify_code_string(guess[:sequence])}"\
       "- #{guess[:black_peg_count].to_s.colorize(:gray)}/#{guess[:white_peg_count]}"
@@ -174,8 +173,8 @@ class Game
   def play_game
     run_intro_text
     turn_number = 1
-    # loop do
     while turn_number <= 12
+
       run_round(turn_number)
       if @black_pegs == 4
         win_game(turn_number)
